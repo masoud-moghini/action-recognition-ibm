@@ -14,7 +14,7 @@ import torch.utils.data
 import torch.utils.data.distributed
 import torch.multiprocessing as mp
 from torch.optim import lr_scheduler
-import tensorboard_logger
+#import #tensorboard_logger
 
 from models import build_model
 from utils.utils import (train, validate, build_dataflow, get_augmentor,
@@ -91,8 +91,8 @@ def main_worker(gpu, ngpus_per_node, args):
             if len(args.std) != 1:
                 raise ValueError("When training with flow, dim of std must be three.")
         std = args.std
-
-    model = model.cuda(args.gpu)
+    if args.gpu is not None:
+        model = model.cuda(args.gpu)
     model.eval()
 
     if args.show_model:
@@ -141,7 +141,7 @@ def main_worker(gpu, ngpus_per_node, args):
     else:
         # DataParallel will divide and allocate batch_size to all available GPUs
         # assign rank to 0
-        model = torch.nn.DataParallel(model).cuda()
+        model = torch.nn.DataParallel(model).cuda() if args.gpu is not None else torch.nn.DataParallel(model)
         args.rank = 0
 
     # define loss function (criterion) and optimizer
@@ -262,7 +262,7 @@ def main_worker(gpu, ngpus_per_node, args):
 
     if args.rank == 0:
         command = " ".join(sys.argv)
-        tensorboard_logger.configure(os.path.join(log_folder))
+        #tensorboard_logger.configure(os.path.join(log_folder))
         print(command, flush=True)
         print(args, flush=True)
         print(model, flush=True)
@@ -330,13 +330,13 @@ def main_worker(gpu, ngpus_per_node, args):
                 lr = scheduler.optimizer.param_groups[0]['lr']
             except Exception as e:
                 lr = None
-            if lr is not None:
-                tensorboard_logger.log_value('learning-rate', lr, epoch + 1)
-            tensorboard_logger.log_value('val-top1', val_top1, epoch + 1)
-            tensorboard_logger.log_value('val-loss', val_losses, epoch + 1)
-            tensorboard_logger.log_value('train-top1', train_top1, epoch + 1)
-            tensorboard_logger.log_value('train-loss', train_losses, epoch + 1)
-            tensorboard_logger.log_value('best-val-top1', best_top1, epoch + 1)
+            #if lr is not None:
+                #tensorboard_logger.log_value('learning-rate', lr, epoch + 1)
+            #tensorboard_logger.log_value('val-top1', val_top1, epoch + 1)
+            #tensorboard_logger.log_value('val-loss', val_losses, epoch + 1)
+            #tensorboard_logger.log_value('train-top1', train_top1, epoch + 1)
+            #tensorboard_logger.log_value('train-loss', train_losses, epoch + 1)
+            #tensorboard_logger.log_value('best-val-top1', best_top1, epoch + 1)
 
         if args.distributed:
             dist.barrier()
