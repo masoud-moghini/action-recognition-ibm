@@ -32,25 +32,32 @@ args = parser.parse_args()
 # shorter_side = 331
 # image_format = 'jpg'
 
-train_file = "{}/data/kinetics-{}_train.csv".format(args.input_root, args.num_classes)
-val_file = "{}/data/kinetics-{}_val.csv".format(args.input_root, args.num_classes)
-test_file = "{}/data/kinetics-{}_test.csv".format(args.input_root, args.num_classes)
-train_video_folder = "{}/train".format(args.input_root)
-val_video_folder = "{}/val".format(args.input_root)
-test_video_folder = "{}/test".format(args.input_root)
+train_file = "{}/data/part_241.csv".format(args.input_root, args.num_classes)
+# val_file = "{}/data/kinetics-{}_val.csv".format(args.input_root, args.num_classes)
+# test_file = "{}/data/kinetics-{}_test.csv".format(args.input_root, args.num_classes)
+train_video_folder = "{}/data/train/part_241".format(args.input_root)
+# val_video_folder = "{}/val".format(args.input_root)
+# test_video_folder = "{}/test".format(args.input_root)
 
 # output
 label_file = "{}/images/kinetics-{}_label.txt".format(args.output_root, args.num_classes)
 train_img_folder = "{}/images/train/".format(args.output_root)
-val_img_folder = "{}/images/val/".format(args.output_root)
-test_img_folder = "{}/images/test/".format(args.output_root)
+# val_img_folder = "{}/images/val/".format(args.output_root)
+# test_img_folder = "{}/images/test/".format(args.output_root)
 train_file_list = "{}/train_{}.txt".format(args.output_root, args.num_classes)
-val_file_list = "{}/val_{}.txt".format(args.output_root, args.num_classes)
-test_file_list = "{}/test_{}.txt".format(args.output_root, args.num_classes)
+# val_file_list = "{}/val_{}.txt".format(args.output_root, args.num_classes)
+# test_file_list = "{}/test_{}.txt".format(args.output_root, args.num_classes)
 
 train_fail_file_list = "{}/train_fail_{}.txt".format(args.output_root, args.num_classes)
-val_fail_file_list = "{}/val_fail_{}.txt".format(args.output_root, args.num_classes)
-test_fail_file_list = "{}/test_fail_{}.txt".format(args.output_root, args.num_classes)
+# val_fail_file_list = "{}/val_fail_{}.txt".format(args.output_root, args.num_classes)
+# test_fail_file_list = "{}/test_fail_{}.txt".format(args.output_root, args.num_classes)
+
+
+
+
+
+
+
 
 
 if not os.path.exists(os.path.join(args.output_root, 'images')):
@@ -65,10 +72,10 @@ def load_video_list(file_path, build_label=False):
             if line == "":
                 continue
             if args.num_classes == 400:
-                label, youtube_id, start_time, end_time, temp, _ = line.split(",")
+                _,label, youtube_id, start_time, end_time, temp, is_cc = line.split(",")
                 label = label.replace("\"", "")
             else:
-                label, youtube_id, start_time, end_time, temp = line.split(",")
+                _,label, youtube_id, start_time, end_time, temp, is_cc = line.split(",")
             if temp.strip() == 'split':
                 continue
             label_name = label.strip()
@@ -104,14 +111,14 @@ def load_test_video_list(file_path):
 
 
 train_videos, label_to_id, id_to_label = load_video_list(train_file, build_label=True)
-val_videos = load_video_list(val_file)
-test_videos = load_test_video_list(test_file)
+#val_videos = load_video_list(val_file)
+#test_videos = load_test_video_list(test_file)
 
 
 def video_to_images(video, basedir, targetdir, shorter_side):
     try:
         cls_id = label_to_id[video[1]]
-        filename = os.path.join(basedir, video[1], video[0] + ".mp4")
+        filename = os.path.join(basedir, video[0] + ".mp4")
         output_foldername = os.path.join(targetdir, video[1], video[0])
     except Exception as e: # for test videos
         cls_id = -1
@@ -119,6 +126,7 @@ def video_to_images(video, basedir, targetdir, shorter_side):
         output_foldername = os.path.join(targetdir, video[0])
 
     if not os.path.exists(filename):
+        [print("video is :{}".format(v)) for v in video]
         print("{} is not existed.".format(filename))
         return video[0], video[1], -2
     else:
@@ -173,7 +181,9 @@ def create_train_video(shorter_side):
     print("Resizing to shorter side: {}".format(shorter_side))
     with open(train_file_list, 'w') as f, open(train_fail_file_list,
                                                'w') as f_w, concurrent.futures.ProcessPoolExecutor(
-            max_workers=64) as executor:
+            max_workers=2) as executor:
+        print("train folder is :{}, and img forlder is:{} and shorter slide is:{}"
+              .format(train_video_folder,train_img_folder,shorter_side))
         futures = [executor.submit(video_to_images, video, train_video_folder, train_img_folder,
                                    shorter_side)
                    for video in train_videos]
@@ -268,6 +278,6 @@ def create_test_video(shorter_side):
 
 if __name__ == "__main__":
     create_train_video(args.shorter_side)
-    create_val_video(args.shorter_side)
-    if args.do_test_set:
-        create_test_video(args.shorter_side)
+    # create_val_video(args.shorter_side)
+    # if args.do_test_set:
+    #     create_test_video(args.shorter_side)
