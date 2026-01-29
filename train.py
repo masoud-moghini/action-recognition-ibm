@@ -146,48 +146,48 @@ def main_worker(gpu, ngpus_per_node, args):
 
     # define loss function (criterion) and optimizer
     train_criterion = nn.CrossEntropyLoss().cuda(args.gpu)
-    val_criterion = nn.CrossEntropyLoss().cuda(args.gpu)
+    #val_criterion = nn.CrossEntropyLoss().cuda(args.gpu)
 
     # Data loading code
-    val_list = os.path.join(args.datadir, val_list_name)
+    # val_list = os.path.join(args.datadir, val_list_name)
 
-    val_augmentor = get_augmentor(False, args.input_size, scale_range=args.scale_range, mean=mean,
-                                  std=std, disable_scaleup=args.disable_scaleup,
-                                  threed_data=args.threed_data,
-                                  is_flow=True if args.modality == 'flow' else False,
-                                  version=args.augmentor_ver)
+    # val_augmentor = get_augmentor(False, args.input_size, scale_range=args.scale_range, mean=mean,
+    #                               std=std, disable_scaleup=args.disable_scaleup,
+    #                               threed_data=args.threed_data,
+    #                               is_flow=True if args.modality == 'flow' else False,
+    #                               version=args.augmentor_ver)
 
-    val_dataset = VideoDataSet(args.datadir, val_list, args.groups, args.frames_per_group,
-                               num_clips=args.num_clips,
-                               modality=args.modality, image_tmpl=image_tmpl,
-                               dense_sampling=args.dense_sampling,
-                               transform=val_augmentor, is_train=False, test_mode=False,
-                               seperator=filename_seperator, filter_video=filter_video)
+    # val_dataset = VideoDataSet(args.datadir, val_list, args.groups, args.frames_per_group,
+    #                            num_clips=args.num_clips,
+    #                            modality=args.modality, image_tmpl=image_tmpl,
+    #                            dense_sampling=args.dense_sampling,
+    #                            transform=val_augmentor, is_train=False, test_mode=False,
+    #                            seperator=filename_seperator, filter_video=filter_video)
 
-    val_loader = build_dataflow(val_dataset, is_train=False, batch_size=args.batch_size,
-                                workers=args.workers,
-                                is_distributed=args.distributed)
+    # val_loader = build_dataflow(val_dataset, is_train=False, batch_size=args.batch_size,
+    #                             workers=args.workers,
+    #                             is_distributed=args.distributed)
 
     log_folder = os.path.join(args.logdir, arch_name)
     if args.rank == 0:
         if not os.path.exists(log_folder):
             os.makedirs(log_folder)
 
-    if args.evaluate:
-        val_top1, val_top5, val_losses, val_speed = validate(val_loader, model, val_criterion,
-                                                             gpu_id=args.gpu)
-        if args.rank == 0:
-            logfile = open(os.path.join(log_folder, 'evaluate_log.log'), 'a')
-            print(
-                'Val@{}: \tLoss: {:4.4f}\tTop@1: {:.4f}\tTop@5: {:.4f}\tSpeed: {:.2f} ms/batch'.format(
-                    args.input_size, val_losses, val_top1, val_top5, val_speed * 1000.0),
-                flush=True)
-            print(
-                'Val@{}: \tLoss: {:4.4f}\tTop@1: {:.4f}\tTop@5: {:.4f}\tSpeed: {:.2f} ms/batch'.format(
-                    args.input_size, val_losses, val_top1, val_top5, val_speed * 1000.0),
-                flush=True,
-                file=logfile)
-        return
+    # if args.evaluate:
+    #     val_top1, val_top5, val_losses, val_speed = validate(val_loader, model, val_criterion,
+    #                                                          gpu_id=args.gpu)
+    #     if args.rank == 0:
+    #         logfile = open(os.path.join(log_folder, 'evaluate_log.log'), 'a')
+    #         print(
+    #             'Val@{}: \tLoss: {:4.4f}\tTop@1: {:.4f}\tTop@5: {:.4f}\tSpeed: {:.2f} ms/batch'.format(
+    #                 args.input_size, val_losses, val_top1, val_top5, val_speed * 1000.0),
+    #             flush=True)
+    #         print(
+    #             'Val@{}: \tLoss: {:4.4f}\tTop@1: {:.4f}\tTop@5: {:.4f}\tSpeed: {:.2f} ms/batch'.format(
+    #                 args.input_size, val_losses, val_top1, val_top5, val_speed * 1000.0),
+    #             flush=True,
+    #             file=logfile)
+    #     return
 
     train_list = os.path.join(args.datadir, train_list_name)
 
@@ -282,14 +282,14 @@ def main_worker(gpu, ngpus_per_node, args):
             dist.barrier()
 
         # evaluate on validation set
-        val_top1, val_top5, val_losses, val_speed = validate(val_loader, model, val_criterion,
-                                                             gpu_id=args.gpu)
+        # val_top1, val_top5, val_losses, val_speed = validate(val_loader, model, val_criterion,
+        #                                                      gpu_id=args.gpu)
 
         # update current learning rate
-        if args.lr_scheduler == 'plateau':
-            scheduler.step(val_losses)
-        else:
-            scheduler.step()
+        # if args.lr_scheduler == 'plateau':
+        #     #scheduler.step(val_losses)
+        # else:
+        #     scheduler.step()
 
         if args.distributed:
             dist.barrier()
@@ -304,17 +304,17 @@ def main_worker(gpu, ngpus_per_node, args):
                   'Speed: {:.2f} ms/batch\tData loading: {:.2f} ms/batch'.format(
                 epoch + 1, args.epochs, train_losses, train_top1, train_top5, train_speed * 1000.0,
                 speed_data_loader * 1000.0), flush=True)
-            print('Val  : [{:03d}/{:03d}]\tLoss: {:4.4f}\tTop@1: {:.4f}\tTop@5: {:.4f}\t'
-                  'Speed: {:.2f} ms/batch'.format(epoch + 1, args.epochs, val_losses, val_top1,
-                                                  val_top5, val_speed * 1000.0), file=logfile,
-                  flush=True)
-            print('Val  : [{:03d}/{:03d}]\tLoss: {:4.4f}\tTop@1: {:.4f}\tTop@5: {:.4f}\t'
-                  'Speed: {:.2f} ms/batch'.format(epoch + 1, args.epochs, val_losses, val_top1,
-                                                  val_top5, val_speed * 1000.0), flush=True)
+            # print('Val  : [{:03d}/{:03d}]\tLoss: {:4.4f}\tTop@1: {:.4f}\tTop@5: {:.4f}\t'
+            #       'Speed: {:.2f} ms/batch'.format(epoch + 1, args.epochs, val_losses, val_top1,
+            #                                       val_top5, val_speed * 1000.0), file=logfile,
+            #       flush=True)
+            # print('Val  : [{:03d}/{:03d}]\tLoss: {:4.4f}\tTop@1: {:.4f}\tTop@5: {:.4f}\t'
+            #       'Speed: {:.2f} ms/batch'.format(epoch + 1, args.epochs, val_losses, val_top1,
+            #                                       val_top5, val_speed * 1000.0), flush=True)
 
             # remember best prec@1 and save checkpoint
-            is_best = val_top1 > best_top1
-            best_top1 = max(val_top1, best_top1)
+            # is_best = val_top1 > best_top1
+            # best_top1 = max(val_top1, best_top1)
 
             save_dict = {'epoch': epoch + 1,
                          'arch': arch_name,
@@ -324,7 +324,7 @@ def main_worker(gpu, ngpus_per_node, args):
                          'scheduler': scheduler.state_dict()
                          }
 
-            save_checkpoint(save_dict, is_best, filepath=log_folder)
+            #save_checkpoint(save_dict, is_best, filepath=log_folder)
             try:
                 # get_lr get all lrs for every layer of current epoch, assume the lr for all layers are identical
                 lr = scheduler.optimizer.param_groups[0]['lr']
