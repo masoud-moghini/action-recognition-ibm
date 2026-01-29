@@ -250,6 +250,10 @@ def resnet(depth, num_classes, without_t_stride, groups, temporal_module_name,
            dw_conv, blending_frames, blending_method, dropout, pooling_method,
            imagenet_pretrained=True, **kwargs):
 
+    print(" RESNET ARCGUMENTS ARE: " \
+          "depth={depth}, num_classes={num_classes}, without_t_stride={without_t_stride}, groups={groups}, temporal_module_name={temporal_module_name},\
+           dw_conv={dw_conv}, blending_frames={blending_frames}, blending_method={blending_method}, dropout={dropout}, pooling_method={pooling_method},\
+           imagenet_pretrained")
     temporal_module = partial(temporal_modeling_module, name=temporal_module_name,
                               dw_conv=dw_conv,
                               blending_frames=blending_frames,
